@@ -3,18 +3,29 @@ classdef node
     %   Detailed explanation goes here
     
     properties
+        name;
         x;
         y;
         routeTable;
+        connectedNodes;
+        color;
     end
     
     methods
-        function obj = node(xin,yin)
+        function obj = node(name,xin,yin)
             obj.routeTable = table(uint64(1),uint64(1),uint8(1),uint8(1));
             obj.routeTable.Properties.VariableNames = {'dest_addr','next_hop_addr','dest_seq_num','life_time'};
             obj.routeTable(1,:)= [];
-            obj.x = xin;
-            obj.y = yin;
+            obj.color = "blue";
+            if  nargin >= 3
+                obj.name = name;
+                obj.x = xin;
+                obj.y = yin;
+            else
+                obj.name = 'unnamed';
+                obj.x = 0;
+                obj.y = 0;
+            end
         end
     end
 end
