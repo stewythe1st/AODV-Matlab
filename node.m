@@ -9,6 +9,8 @@ classdef node
         routeTable;
         connectedNodes;
         color;
+        seqNum;
+        pathFrom;
     end
     
     methods
@@ -17,6 +19,8 @@ classdef node
             obj.routeTable.Properties.VariableNames = {'dest_addr','next_hop_addr','dest_seq_num','life_time'};
             obj.routeTable(1,:)= [];
             obj.color = "blue";
+            obj.seqNum = 1;
+            obj.pathFrom = 0;
             if  nargin >= 3
                 obj.name = name;
                 obj.x = xin;
