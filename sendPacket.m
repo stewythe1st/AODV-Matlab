@@ -33,6 +33,7 @@ function [] = sendPacket(src,dest)
                 [~,idx] = min(dist);
                 duplicates(idx) = [];
                 myTable(duplicates,:) = [];
+                i = i - numel(find(duplicates<=i));
             end
         end
         
