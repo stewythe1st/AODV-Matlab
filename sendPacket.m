@@ -66,17 +66,26 @@ function [] = sendPacket(src,dest)
     % Colors nodes at the global depth
     function [] = setColor(obj,event,color)
         
-        % Mark color update and highlight path update
+        % Set color update
+        % Set highlight path update
+        % Add new route entry to table
         for node = find(myTable.Depth==depth)'
             nodes(myTable.Node(node)).color = color;
             nodes(myTable.Node(node)).pathFrom = myTable.From(node);
+            nodes(myTable.Node(node)).routeTable = nodes(myTable.Node(node)).addToRouteTable(...
+                            nodes(src).name,...
+                            nodes(myTable.From(node)).name,...
+                            depth,...
+                            1,...
+                            1);
         end
         
         % Increase depth for next timer iteration
         depth = depth + 1;
         
-        % Update UI to show changes
-        updateUi()
+        % Update views to show changes
+        updateTableData()
+        updateGraphView()
         
         % If we're beyond the max depth of the table,
         % Clean up timer and reset UI
@@ -87,7 +96,7 @@ function [] = sendPacket(src,dest)
                 nodes(node).color = "blue";
                 nodes(node).pathFrom = 0;
             end
-            updateUi()
+            updateGraphView()
             depth = 0;
         end
         

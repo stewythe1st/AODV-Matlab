@@ -15,10 +15,10 @@ classdef node
     
     methods
         function obj = node(name,xin,yin)
-            obj.routeTable = table(uint64(1),uint64(1),uint8(1),uint8(1));
-            obj.routeTable.Properties.VariableNames = {'dest_addr','next_hop_addr','dest_seq_num','life_time'};
+            obj.routeTable = table(1,1,1,1,1);
+            obj.routeTable.Properties.VariableNames = {'dest','nextHop','hopCnt','seqNum','lifeTime'};
             obj.routeTable(1,:)= [];
-            obj.color = "blue";
+            obj.color = 'blue';
             obj.seqNum = 1;
             obj.pathFrom = 0;
             if  nargin >= 3
@@ -30,6 +30,15 @@ classdef node
                 obj.x = 0;
                 obj.y = 0;
             end
+        end
+        function [routeTable] = addToRouteTable(obj,dest,nextHop,hopCnt,seqNum,lifeTime)
+            routeTable = obj.routeTable;
+            if(hopCnt == 0)
+                return
+            end
+            oldEntries = find(char(routeTable.dest)==char(dest))';
+            routeTable(oldEntries,:) = [];
+            routeTable = [routeTable;{char(dest),char(nextHop),hopCnt,seqNum,lifeTime}];
         end
     end
 end

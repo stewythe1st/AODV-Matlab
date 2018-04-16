@@ -1,7 +1,11 @@
-function [] = updateUi()
+function [] = updateGraphView()
 
     % Bring global node list into scope
     global nodes;
+    
+    % Select graph view to draw on
+    global graphFig;
+    set(0,'CurrentFigure',graphFig);
     
     % Erase highlight lines
     highlightThickness = 2.0;
