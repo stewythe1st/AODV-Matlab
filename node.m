@@ -22,7 +22,7 @@ classdef node
             obj.seqNum = 1;
             obj.pathFrom = 0;
             if  nargin >= 3
-                obj.name = name;
+                obj.name = char(name);
                 obj.x = xin;
                 obj.y = yin;
             else
@@ -36,9 +36,9 @@ classdef node
             if(hopCnt == 0)
                 return
             end
-            oldEntries = find(char(routeTable.dest)==char(dest))';
+            oldEntries = find(routeTable.dest==dest)';
             routeTable(oldEntries,:) = [];
-            routeTable = [routeTable;{char(dest),char(nextHop),hopCnt,seqNum,lifeTime}];
+            routeTable = [routeTable;{dest,nextHop,hopCnt,seqNum,lifeTime}];
         end
     end
 end
