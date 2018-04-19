@@ -27,10 +27,10 @@ function [] = updateGraphView()
              'HorizontalAlignment','center','VerticalAlignment','top');
          
          % Draw any path highlights it has stored
-         if(nodes(i).pathFrom ~= 0)
-             plot([nodes(i).x,nodes(nodes(i).pathFrom).x],...
-                  [nodes(i).y,nodes(nodes(i).pathFrom).y],...
-                  'Color','blue','LineWidth',highlightThickness);
+         for path = nodes(i).pathFrom
+             plot([nodes(i).x,nodes(path).x],...
+                  [nodes(i).y,nodes(path).y],...
+                  'Color',nodes(i).color,'LineWidth',highlightThickness);
          end
     end
     

@@ -18,9 +18,9 @@ classdef node
             obj.routeTable = table(1,1,1,1,1);
             obj.routeTable.Properties.VariableNames = {'dest','nextHop','hopCnt','seqNum','lifeTime'};
             obj.routeTable(1,:)= [];
-            obj.color = 'blue';
+            obj.color = "black";
             obj.seqNum = 1;
-            obj.pathFrom = 0;
+            obj.pathFrom = [];
             if  nargin >= 3
                 obj.name = char(name);
                 obj.x = xin;

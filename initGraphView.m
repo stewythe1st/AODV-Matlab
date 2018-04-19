@@ -76,6 +76,18 @@ function [fig] = initGraphView()
     function [] = sendBtnCallback(obj,event)
         sendPacket(srcNodeBtn.Value,destNodeBtn.Value)
     end
+    clrRteTabsBtn = uicontrol(...
+            'Style','pushbutton',...
+            'String','Clear Route Tables',...
+            'Units','pixels',...
+            'Position',[ui_x,ui_y-0.5*ui_h,ui_w,0.075*ui_h],...
+            'Callback',{@clrRteTabsCallback});
+    function [] = clrRteTabsCallback(obj,event)
+        for node = 1:numel(nodes)
+            nodes(node).routeTable(:,:) = [];
+        end
+        updateTableData()
+    end
 
     % Setup initial state
     set(distanceSlider,'Value',distance/range);    
