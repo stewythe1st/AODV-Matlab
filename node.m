@@ -33,10 +33,18 @@ classdef node
         end
         function [routeTable] = addToRouteTable(obj,dest,nextHop,hopCnt,seqNum,lifeTime)
             routeTable = obj.routeTable;
+            oldEntries = find(routeTable.dest==dest)';
+            if(numel(oldEntries) > 0)
+                currentHopCnt = min(routeTable.hopCnt(oldEntries));
+                if(hopCnt >=currentHopCnt)
+                    return
+                end
+            else
+                currentHopCnt = 0;
+            end
             if(hopCnt == 0)
                 return
             end
-            oldEntries = find(routeTable.dest==dest)';
             routeTable(oldEntries,:) = [];
             routeTable = [routeTable;{dest,nextHop,hopCnt,seqNum,lifeTime}];
         end

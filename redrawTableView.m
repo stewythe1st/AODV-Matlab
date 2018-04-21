@@ -40,5 +40,7 @@ function [obj] = redrawTableView(obj,event)
         
     end
     
+    updateTableData()
+    
 end
 

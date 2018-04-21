@@ -15,12 +15,12 @@
     ColorDest = "yellow";
     
     % Initialize our table and add the start node to it
-    myTable = table(0,src,src,ColorSrc);
-    myTable.Properties.VariableNames = {'Depth','Node','From','Color'};
+    myTable = table(0,0,src,src,ColorSrc);
+    myTable.Properties.VariableNames = {'Depth','HopCnt','Node','From','Color'};
     
     % Try sending the packed normally. If that fails, resort to flooding
-    if(~send())
-        flood()
+    if(~send(src,dest))
+        flood(src,dest)
     end
     
     % Make a timer to iteratively light up paths
@@ -36,17 +36,16 @@
     % Sends a packet normally assuming the
     % routeTable has an entry for it
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function [success] = send()
+    function [success] = send(sendSrc,sendDest)
         success = false;
         
         % Check if we already have a route entry for this
-        depth = 0;
-        currentNode = src;
+        currentNode = sendSrc;
         while true
             depth = depth + 1;
 
             % Look in currentNode's routeTable for the nextHop node
-            nextNode = find(nodes(currentNode).routeTable.dest==dest);
+            nextNode = find(nodes(currentNode).routeTable.dest==sendDest);
 
             % Exit if no node was found
             if(~any(nextNode))
@@ -63,12 +62,12 @@
             end
 
             % Update our path table
-            myTable = [myTable;{depth,nextNode,currentNode,ColorData}];
+            myTable = [myTable;{depth,depth,nextNode,currentNode,ColorData}];
             currentNode = nextNode;
 
             % Exit when we've reached the destination
             % Set success to true
-            if(currentNode == dest)
+            if(currentNode == sendDest)
                 success = true;
                 break
             end
@@ -76,14 +75,15 @@
     end
 
 
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Flood function
-    % Performs network flooding for route discovery
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-     function [] = flood()
+     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     % Flood function
+     % Performs network flooding for route discovery
+     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+     function [] = flood(floodSrc,floodDest)
          
         % Walk down table rows and add connected nodes breadth-first
         i = 0;
+        replyNodes = [];
         while true
             i = i + 1;
 
@@ -99,7 +99,7 @@
                     % Find the distance between Node and From for all
                     % occurrances of this duplicated node
                     dist = [];
-                    duplicates = find(myTable.Node==j)';
+                    duplicates = find(myTable.Node==j & myTable.Color == ColorRREQ)';
                     for k = duplicates
                         dist = [dist,sqrt((nodes(myTable.Node(k)).x - nodes(myTable.From(k)).x)^2 ...
                                         + (nodes(myTable.Node(k)).y - nodes(myTable.From(k)).y)^2)];
@@ -111,13 +111,20 @@
                     i = i - numel(find(duplicates<=i));
                 end
             end
+            
+            % If this node happens to have a valid entry on the route
+            % table, go ahead and send normally from here out
+            if(any(find(nodes(currentNode).routeTable.dest==floodDest)))
+                replyNodes = [replyNodes;currentNode];
+            else
 
-            % Add each of this node's connected nodes unless its already 
-            % on the table before this depth
-            for connectedNode = connectedNodes
-                if(currentNode ~= dest)
-                    if(~any(find(myTable.Node==connectedNode & myTable.Depth < depth)))
-                        myTable = [myTable;{depth,connectedNode,currentNode,ColorRREQ}];
+                % Add each of this node's connected nodes unless its already 
+                % on the table before this depth
+                for connectedNode = connectedNodes
+                    if(currentNode ~= floodDest)
+                        if(~any(find(myTable.Node==connectedNode & myTable.Depth < depth)))
+                            myTable = [myTable;{depth,depth,connectedNode,currentNode,ColorRREQ}];
+                        end
                     end
                 end
             end
@@ -129,24 +136,52 @@
         end
         requestDepth = depth-1;
         
-        % After successful flooding, send reply
-        currentNode = dest;
-        depth = depth + 1;
-        replyTable = table(depth,dest,dest,ColorRREPL);
-        replyTable.Properties.VariableNames = {'Depth','Node','From','Color'};
-        while true
-            depth = depth + 1;
-            nextNode = myTable.From(find(myTable.Node==currentNode));
-            replyTable = [replyTable;{depth,nextNode,currentNode,ColorRREPL}];
-            currentNode = nextNode;
-            if(currentNode == src)
-                break
+        if(isempty(replyNodes))
+            replyTable = floodReply(floodSrc,floodDest);
+            myTable = [myTable;replyTable];
+        else
+            tempDepth = depth;
+            for reply = replyNodes'
+                depth = tempDepth;
+                replyTable = floodReply(floodSrc,reply);
+                myTable = [myTable;replyTable];
             end
         end
         
-        myTable = [myTable;replyTable];
-        
-     end
+    end
+ 
+ 
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Flood Reply function
+    % Finds the return path based on the current table
+    % Returns a path in table form
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function [replyTable] = floodReply(floodReplySrc,floodReplyDest)
+        % After successful flooding, send reply
+        currentNode = floodReplyDest;
+        depth = depth + 1;
+        route2Dest = nodes(currentNode).routeTable.dest == dest;
+        if(any(route2Dest))
+            hopCnt = nodes(currentNode).routeTable(route2Dest,:).hopCnt;
+            if(iscell(hopCnt))
+                hopCnt = cell2mat(hopCnt);
+            end
+        else
+            hopCnt = 0;
+        end
+        replyTable = table(depth,depth,floodReplyDest,floodReplyDest,ColorRREPL);
+        replyTable.Properties.VariableNames = {'Depth','HopCnt','Node','From','Color'};
+        while true
+            depth = depth + 1;
+            hopCnt = hopCnt + 1;
+            nextNode = myTable.From(find(myTable.Node==currentNode));
+            replyTable = [replyTable;{depth,hopCnt,nextNode,currentNode,ColorRREPL}];
+            currentNode = nextNode;
+            if(currentNode == floodReplySrc)
+                break
+            end
+        end
+    end
  
  
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -162,20 +197,22 @@
             nodes(myTable.Node(node)).color = myTable.Color(node);
             nodes(myTable.Node(node)).pathFrom = ...
                 [nodes(myTable.Node(node)).pathFrom,myTable.From(node)];
-            if(myTable.Color(node) == ColorRREQ)
-                nodes(myTable.Node(node)).routeTable = nodes(myTable.Node(node)).addToRouteTable(...
-                                src,...
-                                myTable.From(node),...
-                                depth,...
-                                1,...
-                                1);
-            elseif(myTable.Color(node) == ColorRREPL)
-                nodes(myTable.Node(node)).routeTable = nodes(myTable.Node(node)).addToRouteTable(...
-                                dest,...
-                                myTable.From(node),...
-                                depth-requestDepth,...
-                                1,...
-                                1);
+            if(depth ~= 0 && myTable.Node(node) ~= myTable.From(node))
+                if(myTable.Color(node) == ColorRREQ)
+                    nodes(myTable.Node(node)).routeTable = nodes(myTable.Node(node)).addToRouteTable(...
+                                    src,...
+                                    myTable.From(node),...
+                                    depth,...
+                                    1,...
+                                    1);
+                elseif(myTable.Color(node) == ColorRREPL)
+                    nodes(myTable.Node(node)).routeTable = nodes(myTable.Node(node)).addToRouteTable(...
+                                    dest,...
+                                    myTable.From(node),...
+                                    myTable.HopCnt(node),...
+                                    1,...
+                                    1);
+                end
             end
         end
         
