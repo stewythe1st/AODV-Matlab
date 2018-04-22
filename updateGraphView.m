@@ -1,10 +1,11 @@
 function [] = updateGraphView()
 
-    % Bring global node list into scope
+    % Bring globals into scope
     global nodes;
+    global radius;
+    global graphFig;
     
     % Select graph view to draw on
-    global graphFig;
     set(0,'CurrentFigure',graphFig);
     
     % Erase highlight lines
@@ -12,18 +13,14 @@ function [] = updateGraphView()
     lines = findobj('type','line','-and','LineWidth',highlightThickness);
     delete(lines);
     
-    % Calc radius
-    radius = getpixelposition(gca);
-    radius = radius(3) * 0.0004;
-    
     % Draw each node
     for i = 1:numel(nodes)
         
         % Draw the node itself as a circle
-        drawCircle(nodes(i).x,nodes(i).y,radius,nodes(i).color,'black');
+        nodes(i).circle = drawCircle(i,radius);
         
         % Draw text just below it to label it
-        text(nodes(i).x,nodes(i).y,nodes(i).name,...
+        nodes(i).text = text(nodes(i).x,nodes(i).y,nodes(i).name,...
              'HorizontalAlignment','center','VerticalAlignment','top');
          
          % Draw any path highlights it has stored

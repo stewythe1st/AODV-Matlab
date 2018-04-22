@@ -2,13 +2,18 @@ function [fig] = initGraphView()
     
     % Initial design variables
     distance = 5.5;
+    global range;
     range = 10;
     
     % Bring global node list into scope
     global nodes;
 
     % Figure basic setup
-    fig = figure('NumberTitle','off','Name','AODV Sim - Graph View');
+    fig = figure('NumberTitle','off',...
+                 'Name','AODV Sim - Graph View',...
+                 'WindowButtonDownFcn',@dragObject,...
+                 'WindowButtonUpFcn',@dropObject,...
+                 'WindowButtonMotionFcn',@moveObject);
     hold all
     xlim([0,range])
     ylim([0,range])
@@ -59,11 +64,11 @@ function [fig] = initGraphView()
             'String','Send node',...
             'Units','pixels',...
             'Position',[ui_x,ui_y-0.26*ui_h,ui_w,0.05*ui_h]);    
-    srcNodeBtn = uicontrol(...
+    srcNodeSel = uicontrol(...
             'Style','popup',...
             'String',{nodes.name},...
             'Position',[ui_x,ui_y-0.35*ui_h,ui_w*0.5,0.1*ui_h]);
-    destNodeBtn = uicontrol(...
+    destNodeSel = uicontrol(...
             'Style','popup',...
             'String',{nodes.name},...
             'Position',[ui_x+ui_w*0.5,ui_y-0.35*ui_h,ui_w*0.5,0.1*ui_h]);
@@ -74,7 +79,7 @@ function [fig] = initGraphView()
             'Position',[ui_x,ui_y-0.4*ui_h,ui_w,0.075*ui_h],...
             'Callback',{@sendBtnCallback});
     function [] = sendBtnCallback(obj,event)
-        sendPacket(srcNodeBtn.Value,destNodeBtn.Value)
+        sendPacket(srcNodeSel.Value,destNodeSel.Value)
     end
     clrRteTabsBtn = uicontrol(...
             'Style','pushbutton',...
@@ -88,10 +93,66 @@ function [fig] = initGraphView()
         end
         updateTableData()
     end
+    uicontrol(...
+            'Style','text',...
+            'String','Move:',...
+            'Units','pixels',...
+            'Position',[ui_x,ui_y-0.5725*ui_h,ui_w/2,0.05*ui_h]);   
+    dragNodeSel = uicontrol(...
+            'Style','popup',...
+            'String',{nodes.name},...
+            'Position',[ui_x+ui_w*0.5,ui_y-0.615*ui_h,ui_w*0.5,0.1*ui_h]);
 
     % Setup initial state
     set(distanceSlider,'Value',distance/range);    
     set(showRoutesBtn,'value',1.0);
     calcConnections(distance,showRoutesBtn.Value);
+    
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Drag and drop stuff
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    % Calculate node circle radius
+    global radius;
+    radius = getpixelposition(gca);
+    radius = radius(3) * 0.0004;
+    
+    % Initialize graph movement variables
+    graphPos = get(gca,'Position');
+    pixelsPerW = graphPos(3) / range;
+    pixelsPerH = graphPos(4) / range;
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Drag function
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    dragging = false;
+    function dragObject(obj,event)
+        startPos = get(fig, 'CurrentPoint');
+        dragging = true;
+    end
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Drop function
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function dropObject(obj,event)
+        if(dragging)
+            dragging = false;
+            calcConnections(distance,showRoutesBtn.Value);
+        end
+    end
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Move function
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function moveObject(obj,event)
+        if(dragging)
+            newPos = get(gcf,'CurrentPoint');
+            newPos = newPos - [graphPos(1),graphPos(2)];
+            nodes(dragNodeSel.Value) = nodes(dragNodeSel.Value).updatePos(...
+                (newPos(1) / pixelsPerW),...
+                (newPos(2) / pixelsPerH));
+        end
+    end
 
 end

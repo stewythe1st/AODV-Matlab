@@ -11,6 +11,8 @@ classdef node
         color;
         seqNum;
         pathFrom;
+        circle;
+        text;
     end
     
     methods
@@ -47,6 +49,18 @@ classdef node
             end
             routeTable(oldEntries,:) = [];
             routeTable = [routeTable;{dest,nextHop,hopCnt,seqNum,lifeTime}];
+        end
+        function [rtn] = updatePos(obj,x,y)
+            global radius range
+            if(x > 0 && x < range && y > 0 && y < range)
+                obj.x = x;
+                obj.y = y;
+                obj.circle.Position(1) = x - radius;
+                obj.circle.Position(2) = y - radius;
+                obj.text.Position(1) = x;
+                obj.text.Position(2) = y;
+            end
+            rtn = obj;
         end
     end
 end
