@@ -17,9 +17,11 @@ function [] = updateGraphView()
     for i = 1:numel(nodes)
         
         % Draw the node itself as a circle
+        delete(nodes(i).circle)
         nodes(i).circle = drawCircle(i,radius);
         
         % Draw text just below it to label it
+        delete(nodes(i).text)
         nodes(i).text = text(nodes(i).x,nodes(i).y,nodes(i).name,...
              'HorizontalAlignment','center','VerticalAlignment','top');
          
