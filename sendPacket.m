@@ -11,6 +11,7 @@
     ColorRREQ = "cyan";
     ColorRREPL = "blue";
     ColorData = "green";
+    ColorRERR = "red";
     ColorSrc = "yellow";
     ColorDest = "yellow";
     
@@ -19,8 +20,14 @@
     myTable.Properties.VariableNames = {'Depth','HopCnt','Node','From','Color'};
     
     % Try sending the packed normally. If that fails, resort to flooding
-    if(~send(src,dest))
+    if(~send(src,dest,ColorData))
         flood(src,dest)
+    end
+    
+    % Delete any routes marked by RERR
+    for route = find(myTable.Color == ColorRERR)'
+        idx = find(nodes(myTable(route,:).Node).routeTable.dest == dest);
+        nodes(myTable(route,:).Node).routeTable(idx,:) = [];
     end
     
     % Make a timer to iteratively light up paths
@@ -36,7 +43,7 @@
     % Sends a packet normally assuming the
     % routeTable has an entry for it
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function [success] = send(sendSrc,sendDest)
+    function [success] = send(sendSrc,sendDest,color)
         success = false;
         
         % Check if we already have a route entry for this
@@ -57,12 +64,16 @@
             nextNode = nodes(currentNode).routeTable(nextNode,:).nextHop;
 
             % Exit if this nextNode is unreachable
+            % Send a RERR back to source
             if(~any(find(nodes(currentNode).connectedNodes==nextNode)))
-                break
+                myTable = [myTable;{depth,depth,currentNode,currentNode,ColorRERR}];
+                send(currentNode,sendSrc,ColorRERR);
+                success = true;
+                return
             end
 
             % Update our path table
-            myTable = [myTable;{depth,depth,nextNode,currentNode,ColorData}];
+            myTable = [myTable;{depth,depth,nextNode,currentNode,color}];
             currentNode = nextNode;
 
             % Exit when we've reached the destination
@@ -83,6 +94,7 @@
          
         % Walk down table rows and add connected nodes breadth-first
         i = 0;
+        success = false;
         replyNodes = [];
         while true
             i = i + 1;
@@ -125,6 +137,8 @@
                         if(~any(find(myTable.Node==connectedNode & myTable.Depth < depth)))
                             myTable = [myTable;{depth,depth,connectedNode,currentNode,ColorRREQ}];
                         end
+                    else
+                        success = true;
                     end
                 end
             end
@@ -136,15 +150,17 @@
         end
         requestDepth = depth-1;
         
-        if(isempty(replyNodes))
-            replyTable = floodReply(floodSrc,floodDest);
-            myTable = [myTable;replyTable];
-        else
-            tempDepth = depth;
-            for reply = replyNodes'
-                depth = tempDepth;
-                replyTable = floodReply(floodSrc,reply);
+        if(success)
+            if(isempty(replyNodes))
+                replyTable = floodReply(floodSrc,floodDest);
                 myTable = [myTable;replyTable];
+            else
+                tempDepth = depth;
+                for reply = replyNodes'
+                    depth = tempDepth;
+                    replyTable = floodReply(floodSrc,reply);
+                    myTable = [myTable;replyTable];
+                end
             end
         end
         
