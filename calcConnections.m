@@ -17,9 +17,10 @@ function [] = calcConnections(distance,draw)
         nodes(i).connectedNodes = [];
     end
     
-    % For each nodesCalculate new connected nodes
+    % For each node, calculate new connected nodes
     % Also draw lines, if requested
     for i = 1:numel(nodes)
+        before = strcat(num2str(nodes(i).connectedNodes));
         for j = 1:numel(nodes)
             if i == j
                 continue
@@ -30,6 +31,10 @@ function [] = calcConnections(distance,draw)
                 end
                 nodes(i).connectedNodes = [nodes(i).connectedNodes,j];
             end
+        end
+        after = strcat(num2str(nodes(i).connectedNodes));
+        if(~strcmp(before,after))
+            nodes(i).seqNum = nodes(i).seqNum + 1;
         end
     end
     

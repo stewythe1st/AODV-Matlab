@@ -15,6 +15,9 @@
     ColorSrc = "yellow";
     ColorDest = "yellow";
     
+    % Get sequence number
+    seqNum = nodes(src).seqNum;
+    
     % Initialize our table and add the start node to it
     myTable = table(0,0,src,src,ColorSrc);
     myTable.Properties.VariableNames = {'Depth','HopCnt','Node','From','Color'};
@@ -56,8 +59,12 @@
 
             % Exit if no node was found
             if(~any(nextNode))
-                break
+                break;
             end
+            
+            % Update lifetime field now that we've used this route
+            nodes(currentNode).routeTable(nextNode,:).lifeTime = ...
+                nodes(currentNode).routeTable(nextNode,:).lifeTime + 1;
 
             % Convert from index in routeTable to actual node index
             nextNode = nextNode(1);
@@ -190,7 +197,7 @@
         while true
             depth = depth + 1;
             hopCnt = hopCnt + 1;
-            nextNode = myTable.From(find(myTable.Node==currentNode));
+            nextNode = myTable.From(find(myTable.Node==currentNode & myTable.Color == ColorRREQ));
             replyTable = [replyTable;{depth,hopCnt,nextNode,currentNode,ColorRREPL}];
             currentNode = nextNode;
             if(currentNode == floodReplySrc)
@@ -219,14 +226,14 @@
                                     src,...
                                     myTable.From(node),...
                                     depth,...
-                                    1,...
+                                    seqNum,...
                                     1);
                 elseif(myTable.Color(node) == ColorRREPL)
                     nodes(myTable.Node(node)).routeTable = nodes(myTable.Node(node)).addToRouteTable(...
                                     dest,...
                                     myTable.From(node),...
                                     myTable.HopCnt(node),...
-                                    1,...
+                                    seqNum,...
                                     1);
                 end
             end

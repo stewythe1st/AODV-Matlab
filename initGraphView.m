@@ -11,29 +11,28 @@ function [fig] = initGraphView()
     % Figure basic setup
     fig = figure('NumberTitle','off',...
                  'Name','AODV Sim - Graph View',...
+                 'Units','pixels',...
+                 'MenuBar', 'none',...
+                 'ToolBar', 'none',...
                  'WindowButtonDownFcn',@dragObject,...
                  'WindowButtonUpFcn',@dropObject,...
                  'WindowButtonMotionFcn',@moveObject);
+    ax = axes(fig,...
+                 'Units','pixels',...
+                 'XTick',[],...
+                 'YTick',[],...
+                 'XColor','white',...
+                 'YColor','white');
     hold all
     xlim([0,range])
     ylim([0,range])
-    pos = get(gca,'position');
-    pos(3) = 0.9*pos(3);
-    set(gca,'position',pos);
-    plotArea = gca;
-    set(plotArea,'units','pixels');
-    set(plotArea,'xtick',[],'ytick',[])
-    set(plotArea,'XColor','white','YColor','white')
-    figArea = gcf;
-    set(figArea,'units','pixels'); 
-    set(figArea, 'MenuBar', 'none');
-    set(figArea, 'ToolBar', 'none');
+    set(ax,'Position',ax.Position .* [1,1,0.9,1]);
 
     % Discover dimensions
-    ui_x = plotArea.Position(1) + plotArea.Position(3);
-    ui_y = plotArea.Position(2) + plotArea.Position(4);
-    ui_w = figArea.Position(3) - ui_x;
-    ui_h = figArea.Position(4) - plotArea.Position(2);
+    ui_x = ax.Position(1) + ax.Position(3);
+    ui_y = ax.Position(2) + ax.Position(4);
+    ui_w = fig.Position(3) - ui_x;
+    ui_h = fig.Position(4) - ax.Position(2);
 
     % Make UI buttons
     showRoutesBtn = uicontrol(...
@@ -90,6 +89,7 @@ function [fig] = initGraphView()
     function [] = clrRteTabsCallback(obj,event)
         for node = 1:numel(nodes)
             nodes(node).routeTable(:,:) = [];
+            nodes(node).seqNum = 1;
         end
         updateTableData()
     end
