@@ -1,12 +1,14 @@
 function [fig] = initGraphView()
     
     % Initial design variables
+    global distance;
     distance = 5.5;
     global range;
     range = 10;
     
     % Bring global node list into scope
     global nodes;
+    global showRoutesBtn;
 
     % Figure basic setup
     fig = figure('NumberTitle','off',...
@@ -102,11 +104,88 @@ function [fig] = initGraphView()
             'Style','popup',...
             'String',{nodes.name},...
             'Position',[ui_x+ui_w*0.5,ui_y-0.615*ui_h,ui_w*0.5,0.1*ui_h]);
-
+    addBtn = uicontrol(...
+            'Style','pushbutton',...
+            'String','Add',...
+            'Units','pixels',...
+            'Position',[ui_x,ui_y-0.645*ui_h,ui_w/2,0.05*ui_h],...
+            'Callback',{@addBtnCallback});
+    function [] = addBtnCallback(obj,event)
+        global steps tableFig;
+        label = char(max([nodes.name])+1);
+        idx = numel(nodes)+1;
+        steps(idx,:) = [0,0];
+        nodes(idx) = node(label,range/2,range/2);
+        nodes(idx).updatePos(range/2,range/2);
+        set(srcNodeSel,'String',{nodes.name});
+        set(destNodeSel,'String',{nodes.name});
+        set(dragNodeSel,'String',{nodes.name});
+        set(dragNodeSel,'Value',idx);
+        calcConnections(distance,showRoutesBtn.Value);
+        updateGraphView();
+        redrawTableView(tableFig);
+    end
+    deleteBtn = uicontrol(...
+            'Style','pushbutton',...
+            'String','Delete',...
+            'Units','pixels',...
+            'Position',[ui_x+ui_w*0.5,ui_y-0.645*ui_h,ui_w/2,0.05*ui_h],...
+            'Callback',{@deleteBtnCallback});
+    function  [] = deleteBtnCallback(obj,event)
+        global steps tableFig;
+        if(numel(nodes)<=1)
+            return
+        end
+        idx = dragNodeSel.Value;
+        delete(nodes(idx).circle);
+        delete(nodes(idx).text);
+        nodes(idx) = [];
+        steps(idx,:) = [];
+        updateGraphView()
+        calcConnections(distance,showRoutesBtn.Value)
+        size = numel(nodes);
+        set(srcNodeSel,'Value',min(get(srcNodeSel,'Value'),size));
+        set(destNodeSel,'Value',min(get(destNodeSel,'Value'),size));
+        set(dragNodeSel,'Value',min(get(dragNodeSel,'Value'),size));
+        set(srcNodeSel,'String',{nodes.name});
+        set(destNodeSel,'String',{nodes.name});
+        set(dragNodeSel,'String',{nodes.name});
+        redrawTableView(tableFig);
+    end
+    movementBtn = uicontrol(...
+            'Style','togglebutton',...
+            'String','Movement',...
+            'Units','pixels',...
+            'Position',[ui_x,ui_y-0.75*ui_h,ui_w,0.1*ui_h],...
+            'Callback',@movementBtnCallback);
+    function [] = movementBtnCallback(obj,event)
+        global movementTimer;
+        if(movementBtn.Value)
+            start(movementTimer)
+        else
+            stop(movementTimer)
+        end
+    end
+    movementSpeedSlider = uicontrol(...
+            'Style','slider',...
+            'Units','pixels',...
+            'Position',[ui_x,ui_y-0.8*ui_h,ui_w,0.05*ui_h],...
+            'Callback',@movementSpeedSliderCallback);
+    function [] = movementSpeedSliderCallback(obj,event)
+        global movementTimer;
+        max = 5.0;
+        min = 0.25;
+        period = 1.0 - get(movementSpeedSlider,'Value');
+        period = ((max - min) * period) + min;
+        period = round(period,3);
+        stop(movementTimer)
+        set(movementTimer,'Period',period)
+        movementBtnCallback()
+    end
+        
     % Setup initial state
     set(distanceSlider,'Value',distance/range);    
     set(showRoutesBtn,'value',1.0);
-    calcConnections(distance,showRoutesBtn.Value);
     
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -139,6 +218,7 @@ function [fig] = initGraphView()
         if(dragging)
             dragging = false;
             calcConnections(distance,showRoutesBtn.Value);
+            updateTableData()
         end
     end
 

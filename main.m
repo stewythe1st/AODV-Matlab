@@ -1,4 +1,6 @@
-clear global;  close all;
+clear global
+close all
+delete(timerfind)
 
 % Setup nodes
 global nodes;
@@ -17,5 +19,13 @@ nodes(9) = node("i",9.5,9.5);
 global graphFig;
 graphFig = initGraphView();
 updateGraphView()
+global distance showRoutesBtn;
+calcConnections(distance,showRoutesBtn.Value);
 global tableFig;
 tableFig = initTableView();
+updateTableData()
+
+initMove()
+
+% Show graph view on top
+figure(graphFig)

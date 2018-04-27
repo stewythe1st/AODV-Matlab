@@ -23,6 +23,7 @@ classdef node
             obj.color = "black";
             obj.seqNum = 1;
             obj.pathFrom = [];
+%             obj.circle = rectangle('Position',[0,0,0,0]);
             if  nargin >= 3
                 obj.name = char(name);
                 obj.x = xin;

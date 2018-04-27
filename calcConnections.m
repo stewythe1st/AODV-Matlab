@@ -5,22 +5,19 @@ function [] = calcConnections(distance,draw)
         return
     end
 
-    % Bring global node list into scope
-    global nodes;
+    % Bring globals into scope
+    global nodes graphFig
+    set(0,'CurrentFigure',graphFig);
     
     % Erase current lines
     lines = findobj('type','line');
     delete(lines);
     
-    % Clear out any previously connected nodes
-    for i = 1:numel(nodes)
-        nodes(i).connectedNodes = [];
-    end
-    
     % For each node, calculate new connected nodes
     % Also draw lines, if requested
     for i = 1:numel(nodes)
         before = strcat(num2str(nodes(i).connectedNodes));
+        nodes(i).connectedNodes = [];
         for j = 1:numel(nodes)
             if i == j
                 continue

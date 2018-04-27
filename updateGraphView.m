@@ -13,11 +13,14 @@ function [] = updateGraphView()
     lines = findobj('type','line','-and','LineWidth',highlightThickness);
     delete(lines);
     
+    % Erase all old circles
+    circles = findobj('type','rectangle');
+    delete(circles)
+    
     % Draw each node
     for i = 1:numel(nodes)
         
         % Draw the node itself as a circle
-        delete(nodes(i).circle)
         nodes(i).circle = drawCircle(i,radius);
         
         % Draw text just below it to label it

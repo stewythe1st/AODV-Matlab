@@ -16,14 +16,26 @@
     ColorDest = "yellow";
     
     % Get sequence number
-    seqNum = nodes(src).seqNum;
+    idx = find(nodes(src).routeTable.dest==dest)';
+    if(isempty(idx))
+        seqNum = 0;
+    else
+        seqNum = nodes(src).routeTable.seqNum(idx);
+    end
     
     % Initialize our table and add the start node to it
     myTable = table(0,0,src,src,ColorSrc);
     myTable.Properties.VariableNames = {'Depth','HopCnt','Node','From','Color'};
     
-    % Try sending the packed normally. If that fails, resort to flooding
-    if(~send(src,dest,ColorData))
+    % If this node has a route entry for our dest, try sending normally
+    tryAgain = false;
+    if(any(idx))
+        if(~send(src,dest,ColorData))
+            tryAgain = true;
+            flood(src,dest);
+        end
+    else
+        tryAgain = true;
         flood(src,dest)
     end
     
@@ -59,6 +71,13 @@
 
             % Exit if no node was found
             if(~any(nextNode))
+                % If we were expecting to have a valid path, send a RERR
+                if(color == ColorData)
+                    replyTable = floodReply(sendSrc,currentNode,ColorData,ColorRERR);
+                    myTable = [myTable;replyTable];
+                    success = true;
+                    return
+                end
                 break;
             end
             
@@ -75,6 +94,7 @@
             if(~any(find(nodes(currentNode).connectedNodes==nextNode)))
                 myTable = [myTable;{depth,depth,currentNode,currentNode,ColorRERR}];
                 send(currentNode,sendSrc,ColorRERR);
+                tryAgain = true;
                 success = true;
                 return
             end
@@ -133,8 +153,9 @@
             
             % If this node happens to have a valid entry on the route
             % table, go ahead and send normally from here out
-            if(any(find(nodes(currentNode).routeTable.dest==floodDest)))
+            if(any(find(nodes(currentNode).routeTable.dest==floodDest)) || currentNode == floodDest)
                 replyNodes = [replyNodes;currentNode];
+                success = true;
             else
 
                 % Add each of this node's connected nodes unless its already 
@@ -152,22 +173,20 @@
 
             % Check for termination
             if(i >= size(myTable,1))
+                if(isempty(replyNodes))
+                    tryAgain = false;
+                end
                 break
             end
         end
         requestDepth = depth-1;
         
         if(success)
-            if(isempty(replyNodes))
-                replyTable = floodReply(floodSrc,floodDest);
+            tempDepth = depth;
+            for reply = replyNodes'
+                depth = tempDepth;
+                replyTable = floodReply(floodSrc,reply,ColorRREQ,ColorRREPL);
                 myTable = [myTable;replyTable];
-            else
-                tempDepth = depth;
-                for reply = replyNodes'
-                    depth = tempDepth;
-                    replyTable = floodReply(floodSrc,reply);
-                    myTable = [myTable;replyTable];
-                end
             end
         end
         
@@ -179,7 +198,7 @@
     % Finds the return path based on the current table
     % Returns a path in table form
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function [replyTable] = floodReply(floodReplySrc,floodReplyDest)
+    function [replyTable] = floodReply(floodReplySrc,floodReplyDest,colorLookFor,colorMake)
         % After successful flooding, send reply
         currentNode = floodReplyDest;
         depth = depth + 1;
@@ -192,13 +211,16 @@
         else
             hopCnt = 0;
         end
-        replyTable = table(depth,depth,floodReplyDest,floodReplyDest,ColorRREPL);
+        replyTable = table(depth,depth,floodReplyDest,floodReplyDest,colorMake);
         replyTable.Properties.VariableNames = {'Depth','HopCnt','Node','From','Color'};
         while true
             depth = depth + 1;
             hopCnt = hopCnt + 1;
-            nextNode = myTable.From(find(myTable.Node==currentNode & myTable.Color == ColorRREQ));
-            replyTable = [replyTable;{depth,hopCnt,nextNode,currentNode,ColorRREPL}];
+            nextNode = myTable.From(find(myTable.Node==currentNode & myTable.Color == colorLookFor));
+            if(numel(nextNode) > 1)
+                nextNode = chooseClosest(nextNode, currentNode);
+            end
+            replyTable = [replyTable;{depth,hopCnt,nextNode,currentNode,colorMake}];
             currentNode = nextNode;
             if(currentNode == floodReplySrc)
                 break
@@ -226,7 +248,7 @@
                                     src,...
                                     myTable.From(node),...
                                     depth,...
-                                    seqNum,...
+                                    nodes(src).seqNum,...
                                     1);
                 elseif(myTable.Color(node) == ColorRREPL)
                     nodes(myTable.Node(node)).routeTable = nodes(myTable.Node(node)).addToRouteTable(...
@@ -252,11 +274,16 @@
             stop(colorTimer)
             delete(colorTimer)
             for node = 1:numel(nodes)
-                nodes(node).color = "black";
+                nodes(node).color = 'black';
                 nodes(node).pathFrom = [];
             end
             updateGraphView()
             depth = 0;
+            
+            % If we need to re-send now that we have a path, try again
+            if(tryAgain)
+                sendPacket(src,dest)
+            end
         end
         
     end
