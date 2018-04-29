@@ -1,19 +1,19 @@
- function [] = sendPacket(src,dest)
+ function [myTable] = sendPacket(src,dest,quickMode)
     
-    % Bring global node list into scope
-    global nodes;
+    % Check args
+    if(nargin <= 2)
+        quickMode = false;
+    end
+    if(nargin > 3 || src == dest)
+        return
+    end
+ 
+    % Bring globals into scope
+    global nodes colors;
     
     % Persistant variables
     requestDepth = 0;
     depth = 0;
-    
-    % Define colors
-    ColorRREQ = "cyan";
-    ColorRREPL = "blue";
-    ColorData = "green";
-    ColorRERR = "red";
-    ColorSrc = "yellow";
-    ColorDest = "yellow";
     
     % Get sequence number
     idx = find(nodes(src).routeTable.dest==dest)';
@@ -24,13 +24,13 @@
     end
     
     % Initialize our table and add the start node to it
-    myTable = table(0,0,src,src,ColorSrc);
+    myTable = table(0,0,src,src,colors.Src);
     myTable.Properties.VariableNames = {'Depth','HopCnt','Node','From','Color'};
     
     % If this node has a route entry for our dest, try sending normally
     tryAgain = false;
     if(any(idx))
-        if(~send(src,dest,ColorData))
+        if(~send(src,dest,colors.Data))
             tryAgain = true;
             flood(src,dest);
         end
@@ -40,18 +40,23 @@
     end
     
     % Delete any routes marked by RERR
-    for route = find(myTable.Color == ColorRERR)'
+    for route = find(myTable.Color == colors.RERR)'
         idx = find(nodes(myTable(route,:).Node).routeTable.dest == dest);
         nodes(myTable(route,:).Node).routeTable(idx,:) = [];
     end
     
-    % Make a timer to iteratively light up paths
-    colorTimer = timer('Name','colorTimer',...
-                       'ExecutionMode','fixedDelay',...
-                       'Period',0.5,...
-                       'TimerFcn',@setColor);
-    depth = 0;
-    start(colorTimer)
+    if(quickMode)
+        quickUpdate();
+    else
+    
+        % Make a timer to iteratively light up paths
+        colorTimer = timer('Name','colorTimer',...
+                           'ExecutionMode','fixedDelay',...
+                           'Period',0.5,...
+                           'TimerFcn',@setColor);
+        depth = 0;
+        start(colorTimer)
+    end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Send function
@@ -63,6 +68,7 @@
         
         % Check if we already have a route entry for this
         currentNode = sendSrc;
+        visitedNodes = [];
         while true
             depth = depth + 1;
 
@@ -72,8 +78,8 @@
             % Exit if no node was found
             if(~any(nextNode))
                 % If we were expecting to have a valid path, send a RERR
-                if(color == ColorData)
-                    replyTable = floodReply(sendSrc,currentNode,ColorData,ColorRERR);
+                if(color == colors.Data)
+                    replyTable = floodReply(sendSrc,currentNode,colors.Data,colors.RERR);
                     myTable = [myTable;replyTable];
                     success = true;
                     return
@@ -92,12 +98,22 @@
             % Exit if this nextNode is unreachable
             % Send a RERR back to source
             if(~any(find(nodes(currentNode).connectedNodes==nextNode)))
-                myTable = [myTable;{depth,depth,currentNode,currentNode,ColorRERR}];
-                send(currentNode,sendSrc,ColorRERR);
+                myTable = [myTable;{depth,depth,currentNode,currentNode,colors.RERR}];
+                send(currentNode,sendSrc,colors.RERR);
                 tryAgain = true;
                 success = true;
                 return
             end
+            
+            % Exit if we're in a loop
+            if(any(find(visitedNodes==currentNode)))
+                replyTable = floodReply(sendSrc,currentNode,colors.Data,colors.RERR);
+                myTable = [myTable;replyTable];
+                tryAgain = true;
+                success = true;
+                return
+            end
+            visitedNodes = [visitedNodes,currentNode];
 
             % Update our path table
             myTable = [myTable;{depth,depth,nextNode,currentNode,color}];
@@ -138,7 +154,7 @@
                     % Find the distance between Node and From for all
                     % occurrances of this duplicated node
                     dist = [];
-                    duplicates = find(myTable.Node==j & myTable.Color == ColorRREQ)';
+                    duplicates = find(myTable.Node==j & myTable.Color == colors.RREQ)';
                     for k = duplicates
                         dist = [dist,sqrt((nodes(myTable.Node(k)).x - nodes(myTable.From(k)).x)^2 ...
                                         + (nodes(myTable.Node(k)).y - nodes(myTable.From(k)).y)^2)];
@@ -163,7 +179,7 @@
                 for connectedNode = connectedNodes
                     if(currentNode ~= floodDest)
                         if(~any(find(myTable.Node==connectedNode & myTable.Depth < depth)))
-                            myTable = [myTable;{depth,depth,connectedNode,currentNode,ColorRREQ}];
+                            myTable = [myTable;{depth,depth,connectedNode,currentNode,colors.RREQ}];
                         end
                     else
                         success = true;
@@ -185,7 +201,7 @@
             tempDepth = depth;
             for reply = replyNodes'
                 depth = tempDepth;
-                replyTable = floodReply(floodSrc,reply,ColorRREQ,ColorRREPL);
+                replyTable = floodReply(floodSrc,reply,colors.RREQ,colors.RREPL);
                 myTable = [myTable;replyTable];
             end
         end
@@ -243,14 +259,14 @@
             nodes(myTable.Node(node)).pathFrom = ...
                 [nodes(myTable.Node(node)).pathFrom,myTable.From(node)];
             if(depth ~= 0 && myTable.Node(node) ~= myTable.From(node))
-                if(myTable.Color(node) == ColorRREQ)
+                if(myTable.Color(node) == colors.RREQ)
                     nodes(myTable.Node(node)).routeTable = nodes(myTable.Node(node)).addToRouteTable(...
                                     src,...
                                     myTable.From(node),...
                                     depth,...
                                     nodes(src).seqNum,...
                                     1);
-                elseif(myTable.Color(node) == ColorRREPL)
+                elseif(myTable.Color(node) == colors.RREPL)
                     nodes(myTable.Node(node)).routeTable = nodes(myTable.Node(node)).addToRouteTable(...
                                     dest,...
                                     myTable.From(node),...
@@ -282,10 +298,54 @@
             
             % If we need to re-send now that we have a path, try again
             if(tryAgain)
-                sendPacket(src,dest)
+                sendPacket(src,dest);
             end
         end
-        
+    
     end
 
-end
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Update (non-timer, non-GUI) function
+    % Performs the iterative updates of the
+    % color function, but without displaying
+    % it on the GUI
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function [] = quickUpdate()
+        
+        depth = 0;
+        while(depth <= max(myTable.Depth))
+            
+            % Add new route entry to table
+            for i = find(myTable.Depth==depth)'
+                if(depth ~= 0 && myTable.Node(i) ~= myTable.From(i))
+                    if(myTable.Color(i) == colors.RREQ)
+                        nodes(myTable.Node(i)).routeTable = nodes(myTable.Node(i)).addToRouteTable(...
+                                        src,...
+                                        myTable.From(i),...
+                                        depth,...
+                                        nodes(src).seqNum,...
+                                        1);
+                    elseif(myTable.Color(i) == colors.RREPL)
+                        nodes(myTable.Node(i)).routeTable = nodes(myTable.Node(i)).addToRouteTable(...
+                                        dest,...
+                                        myTable.From(i),...
+                                        myTable.HopCnt(i),...
+                                        seqNum,...
+                                        1);
+                    end
+                end
+            end
+            
+            % Increase depth for next timer iteration
+            depth = depth + 1;
+        end
+        
+        % If we need to re-send now that we have a path, try again
+        if(tryAgain)
+            nextTable = sendPacket(src,dest,quickMode);
+            myTable = [myTable;nextTable];
+        end
+    end
+
+ end

@@ -9,6 +9,15 @@ function [fig] = initGraphView()
     % Bring global node list into scope
     global nodes;
     global showRoutesBtn;
+    
+    % Make colors
+    global colors;
+    colors.RREQ = "cyan";
+    colors.RREPL = "blue";
+    colors.Data = "green";
+    colors.RERR = "red";
+    colors.Src = "yellow";
+    colors.Dest = "yellow";
 
     % Figure basic setup
     fig = figure('NumberTitle','off',...
@@ -80,7 +89,7 @@ function [fig] = initGraphView()
             'Position',[ui_x,ui_y-0.4*ui_h,ui_w,0.075*ui_h],...
             'Callback',{@sendBtnCallback});
     function [] = sendBtnCallback(obj,event)
-        sendPacket(srcNodeSel.Value,destNodeSel.Value)
+        sendPacket(srcNodeSel.Value,destNodeSel.Value);
     end
     clrRteTabsBtn = uicontrol(...
             'Style','pushbutton',...
