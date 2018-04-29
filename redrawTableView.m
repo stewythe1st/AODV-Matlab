@@ -1,4 +1,4 @@
-function [obj] = redrawTableView(obj,event)
+function [obj] = redrawTableView(obj)
     
     % Bring global node list into scope
     global nodes;
