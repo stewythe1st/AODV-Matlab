@@ -9,7 +9,7 @@
     end
  
     % Bring globals into scope
-    global nodes colors;
+    global nodes colors routeLifetime;
     
     % Persistant variables
     requestDepth = 0;
@@ -56,6 +56,14 @@
                            'TimerFcn',@setColor);
         depth = 0;
         start(colorTimer)
+    end
+    
+    % Remove route with expired lifetimes
+    for i=1:numel(nodes)
+        for j = 1:size(nodes(i).routeTable,1)
+            expired = find(nodes(i).routeTable.lifeTime > routeLifetime);
+            nodes(i).routeTable(expired,:) = [];
+        end
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -229,6 +237,7 @@
         end
         replyTable = table(depth,depth,floodReplyDest,floodReplyDest,colorMake);
         replyTable.Properties.VariableNames = {'Depth','HopCnt','Node','From','Color'};
+        visitedNodes = currentNode;
         while true
             depth = depth + 1;
             hopCnt = hopCnt + 1;
@@ -236,9 +245,10 @@
             if(numel(nextNode) > 1)
                 nextNode = chooseClosest(nextNode, currentNode);
             end
+            visitedNodes = [visitedNodes,currentNode];
             replyTable = [replyTable;{depth,hopCnt,nextNode,currentNode,colorMake}];
             currentNode = nextNode;
-            if(currentNode == floodReplySrc)
+            if(any(find(visitedNodes==currentNode)) || currentNode == floodReplySrc)
                 break
             end
         end
@@ -271,7 +281,7 @@
                                     dest,...
                                     myTable.From(node),...
                                     myTable.HopCnt(node),...
-                                    nodes(src).seqNum,...
+                                    nodes(dest).seqNum,...
                                     1);
                 end
             end
@@ -331,7 +341,7 @@
                                         dest,...
                                         myTable.From(i),...
                                         myTable.HopCnt(i),...
-                                        seqNum,...
+                                        nodes(dest).seqNum,...
                                         1);
                     end
                 end

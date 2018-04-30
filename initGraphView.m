@@ -1,19 +1,12 @@
 function [fig] = initGraphView()
     
-    % Initial design variables
-    global distance;
-    distance = 5.5;
-    global range;
-    range = 10;
-    
     % Bring global node list into scope
-    global nodes;
-    global showRoutesBtn;
+    global nodes showRoutesBtn range distance;
     
     % Make colors
     global colors;
-    colors.RREQ = "cyan";
     colors.RREPL = "blue";
+    colors.RREQ = "cyan";
     colors.Data = "green";
     colors.RERR = "red";
     colors.Src = "yellow";
@@ -90,6 +83,7 @@ function [fig] = initGraphView()
             'Callback',{@sendBtnCallback});
     function [] = sendBtnCallback(obj,event)
         sendPacket(srcNodeSel.Value,destNodeSel.Value);
+        updateTableData()
     end
     clrRteTabsBtn = uicontrol(...
             'Style','pushbutton',...

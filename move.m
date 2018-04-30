@@ -32,7 +32,7 @@ function [] = move(obj,event,quickMode)
                 ydiff = steps(nodeIdx,1)*sind(steps(nodeIdx,2));
             end
             x = x + xdiff;
-            y = y + ydiff;
+%             y = y + ydiff;
             nodes(nodeIdx) = nodes(nodeIdx).updatePos(x,y);
         end
         

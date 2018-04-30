@@ -1,6 +1,4 @@
 classdef node
-    %UNTITLED Summary of this class goes here
-    %   Detailed explanation goes here
     
     properties
         name;
@@ -8,8 +6,8 @@ classdef node
         y;
         routeTable;
         connectedNodes;
-        color;
         seqNum;
+        color;
         pathFrom;
         circle;
         text;
@@ -23,7 +21,6 @@ classdef node
             obj.color = "black";
             obj.seqNum = 1;
             obj.pathFrom = [];
-%             obj.circle = rectangle('Position',[0,0,0,0]);
             if  nargin >= 3
                 obj.name = char(name);
                 obj.x = xin;
