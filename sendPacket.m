@@ -90,6 +90,7 @@
                     replyTable = floodReply(sendSrc,currentNode,colors.Data,colors.RERR);
                     myTable = [myTable;replyTable];
                     success = true;
+                    tryAgain = true;
                     return
                 end
                 break;
@@ -106,8 +107,15 @@
             % Exit if this nextNode is unreachable
             % Send a RERR back to source
             if(~any(find(nodes(currentNode).connectedNodes==nextNode)))
-                myTable = [myTable;{depth,depth,currentNode,currentNode,colors.RERR}];
-                send(currentNode,sendSrc,colors.RERR);
+%                 myTable = [myTable;{depth,depth,currentNode,currentNode,colors.RERR}];
+%                 send(currentNode,sendSrc,colors.RERR);
+%                 myTable = [myTable;{depth,depth,sendSrc,sendSrc,colors.RERR}];
+                if(currentNode == sendSrc)
+                    myTable = [myTable;{depth,depth,sendSrc,sendSrc,colors.RERR}];
+                else
+                    replyTable = floodReply(sendSrc,currentNode,colors.Data,colors.RERR);
+                    myTable = [myTable;replyTable];
+                end
                 tryAgain = true;
                 success = true;
                 return

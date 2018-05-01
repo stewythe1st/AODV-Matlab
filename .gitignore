@@ -1,2 +1,15 @@
+
+# MATLAB autosave files
 *.asv
+
+# MS OFfice temp files
 ~$*
+
+# LaTeX intermediate files
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.bak
+*.synctex.gz

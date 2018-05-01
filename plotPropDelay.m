@@ -1,4 +1,4 @@
-function [fig] = plotPropDelay(propDelay)
+function [fig] = plotPropDelay(stats)
 
     % Bring globals into scope
     global colors;
@@ -13,7 +13,7 @@ function [fig] = plotPropDelay(propDelay)
                  'NumberTitle','off');
              
     % Plot data
-    bar(propDelay.*10^7)
+    bar(stats.propDelay.*10^7)
     
     % Format plot
     xlabel('Data Packet')

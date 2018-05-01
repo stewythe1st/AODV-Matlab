@@ -147,6 +147,18 @@ function [fig] = initGraphView()
         updateGraphView()
         calcConnections(distance,showRoutesBtn.Value)
         size = numel(nodes);
+        for i = 1:size
+            badRoutes = find(nodes(i).routeTable.dest == idx | nodes(i).routeTable.nextHop == idx);
+            nodes(i).routeTable(badRoutes,:) = [];
+            badRoutes = find(nodes(i).routeTable.dest > idx);
+            for route = badRoutes'
+                nodes(i).routeTable(route,:).dest = nodes(i).routeTable(route,:).dest - 1;
+            end
+            badRoutes = find(nodes(i).routeTable.nextHop > idx);
+            for route = badRoutes'
+                nodes(i).routeTable(route,:).nextHop = nodes(i).routeTable(route,:).nextHop - 1;
+            end
+        end
         set(srcNodeSel,'Value',min(get(srcNodeSel,'Value'),size));
         set(destNodeSel,'Value',min(get(destNodeSel,'Value'),size));
         set(dragNodeSel,'Value',min(get(dragNodeSel,'Value'),size));

@@ -1,15 +1,21 @@
-function [stats,propDelay] = generateTraffic(packets)
+function stats = generateTraffic(packets,movement)
+
+    % Check args
+    if(nargin == 1)
+        movement = 50;
+    elseif(nargin ~=2)
+        return
+    end
     
     % Bring globals into scope
     global nodes colors showRoutesBtn distance;
     
     % Initialize variables
     numNodes = numel(nodes);
-    stats.RREPL = zeros(1,packets+1);
-    stats.RREQ = zeros(1,packets+1);
-    stats.RERR = zeros(1,packets+1);
-    stats.Data = zeros(1,packets+1);
-    movement = 50; % update movements after this many packets
+    stats.transmissions.RREPL = zeros(1,packets+1);
+    stats.transmissions.RREQ = zeros(1,packets+1);
+    stats.transmissions.RERR = zeros(1,packets+1);
+    stats.transmissions.Data = zeros(1,packets+1);
     propDelay = zeros(1,packets);
     
     for i = 1:packets
@@ -30,10 +36,10 @@ function [stats,propDelay] = generateTraffic(packets)
         paths(idx,:) = [];
         
         % Parse table of path utilized
-        stats.RREPL(i+1) = stats.RREPL(i) + numel(find(paths.Color==colors.RREPL));
-        stats.RREQ(i+1) = stats.RREQ(i) + numel(find(paths.Color==colors.RREQ));
-        stats.RERR(i+1) = stats.RERR(i) + numel(find(paths.Color==colors.RERR));
-        stats.Data(i+1) = stats.Data(i) + numel(find(paths.Color==colors.Data));
+        stats.transmissions.RREPL(i+1) = stats.transmissions.RREPL(i) + numel(find(paths.Color==colors.RREPL));
+        stats.transmissions.RREQ(i+1) = stats.transmissions.RREQ(i) + numel(find(paths.Color==colors.RREQ));
+        stats.transmissions.RERR(i+1) = stats.transmissions.RERR(i) + numel(find(paths.Color==colors.RERR));
+        stats.transmissions.Data(i+1) = stats.transmissions.Data(i) + numel(find(paths.Color==colors.Data));
         
         % Calculate propagation delay
         dist = 0;
@@ -49,9 +55,8 @@ function [stats,propDelay] = generateTraffic(packets)
             end
             dist = dist + max(distTemp);
         end
-        propDelay(i) = dist / (3*10^8);
-        
-
+        stats.propDelay(i) = dist / (3*10^8);
+        stats.hops(i) = numel(find(paths.Node ~= paths.From));
     end
     
     % Update all the GUIs

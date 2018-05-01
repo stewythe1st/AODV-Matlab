@@ -14,9 +14,9 @@ function [fig] = plotStats(stats)
     
     % Plot stats data
     hold all
-    for field = fieldnames(stats)'
+    for field = fieldnames(stats.transmissions)'
         field = char(field);
-        plot(0:numel(stats.(field))-1,stats.(field),'Color',colors.(field));
+        plot(0:numel(stats.transmissions.(field))-1,stats.transmissions.(field),'Color',colors.(field));
     end
     
     % Format graph
