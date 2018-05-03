@@ -39,7 +39,17 @@ For the purposes of this initial work, the focus will be on the ad-hoc on-demand
 
 \section{Literature Survey}
 
-Although AODV was developed almost 15 years ago \cite{rfc3561}, it still remains highly studied in the current state of the art. The recent body of work shows much interest on the subject of AODV as a routing protocol. Several recent comparative analyses of routing protocols in MANET or VANET networks feature AODV: Ferrnato, et. al. in their protocol analysis with regards to urban vehicular scenarios \cite{aodv_interest_urban}, Abuashour and Kadoch in their study of clustered VANET scenarios \cite{aodv_interest_vanet}, and Ejmaa, et. al. in their modification of AODV to create a routing scheme with less RREQ message overhead \cite{aodv_interest_overhead}. The abundance of work in this area serves as assurance that AODV still remains a central protocol to the field and will serve as a relevant target protocol for this project.
+\subsection{AODV History}
+
+Although AODV was developed almost 15 years ago \cite{rfc3561}, it still remains highly studied in the current state of the art. AODV is a reactive routing protocal that aims to reduces overhead by requireing few network-wide broadcasts. There is no centrally kept routing information and each node discovers routes only as necessary. Only in the event that a node does not know a path to it's target destination, does it initiate a network-wide broadcast. This is known as flooding and involves a route request messages that propagate through the network, landing once on each connected node until that node either is the destination, or knows a path to the destination. As flooding is the single most expensive action within AODV (a notion affirmed in section \ref{sect:analysis}), it has been the subject of much research. Saeed, et. al. \cite{7813246} propose a novel flooding procedure known as VDM-SL that aims to greatly reduce overhead by targeting route request messages at nodes based on the type of traffic they are sending in order to determine who is most likely to know a route to the destination. Alternatively, Feng, suggests a cluster-based method as a way of reducing route request overhead \cite{8343729}. Their method involves selecting clusterheads to propagate the requests across large networks.
+
+Another key feature of AODV is it's elegant error handling. In the case that a node cannot complete a link stored in it's route table (i.e. the stored link references a next hop node that's not currently connected), a route error message must be sent. Whenever this happens during a data send transmission, the transmission must be halted and a route error message propagated all the way back to the source node. While this does eliminate the need for a network wide broadcast initially, this could still be a significant cause for additional overhead as after the propagation back to the source, flooding must occur again to determine new route. Devi and Sikamani, \cite{6675942} propose a route error handling scheme which does not require full propagation back to the source, but instead allows each intermediate node to attempt to handle the error themselves. Such a strategy covers cases of temporary interference causing link failures (simply trying again may resolve the issue) as well as routes which can be easily re-routed one link up the path. In much the same fashion, Ejmaa, et. al. \cite{aodv_interest_overhead} propose a similar modification resulting in a new AODV-based routing protocal they call Dynamic Connectivity Factor routing Protocol (DCFP). This protocol also monitors local nodes and attempts to use additional local parameters to resolve route errors, thereby created less overhead.
+
+Nodes determine who their connected neighbors are by regular hello messages, as well as attempted and failed transmissions. One proposed improvement on this is Mittal's 2017 paper \cite{8344719} targeting VANET networks which enhances hello messages to share additional neighboring node information and route info, a method which they prove can help in congested vehicular scenarios.
+
+The recent body of work shows much interest on the subject of AODV as a routing protocol. Several recent comparative analyses of routing protocols in MANET or VANET networks feature AODV: Ferrnato, et. al. in their protocol analysis with regards to urban vehicular scenarios \cite{aodv_interest_urban} and Abuashour and Kadoch in their study of clustered VANET scenarios \cite{aodv_interest_vanet}. A novel idea proposed by Yadav and Hussain is to introduce authentication to AODV \cite{8203733}, thereby preventing man-in-the-middle style attacks from malicious masquerading nodes. The abundance of work in this area serves as assurance that AODV still remains a central protocol to the field and will serve as a relevant target protocol for this project.
+
+\subsection{Network Simulators History}
 
 While MATLAB does already provide a comprehensive WLAN systems toolbox \cite{matlab_wlan_toolbox}, it is solely targeted at IEEE 802.11 standards-compliant LAN-based networks and provides little-to-no support for ad-hoc or sensor networks. The selection of specified ad-hoc routing schemes and modification of node parameters is not present in the toolset provided. Unfortunately, this is far from sufficient for the goals of this endeavor.
 
@@ -47,20 +57,17 @@ The existing body of work does, however, show several instances of using MATLAB 
 
 Habib, et. al. describe another approach to the usage of MATLAB in this area: to simulate path-finding algorithms in various routing schemes, and to provide a comparison among networks of varied size \cite{matlab_ex_pathfinding}. Their analysis focuses more on the mathematics of pathfinding and as such, is also insufficient for our purposes.
 
-While there is significant work being produced using MATLAB as an environment, much of the groudbreaking work is being done in other simulation tools as well. Network Simulator 3 (ns-3) a popular tool for such simulations; it provides a discrete-event network simluator/emulator and scripting language based on C++ or Python code \cite{ns3}. Ns-3 is targeted primarily for research and educational use. While popular, is has received significant criticism. Patel and Kmaboj criticized ns-3 harshly for it's lack of a GUI and noted it's complexity and lack of hosted work and support \cite{ns3_criticism}. That is not to say it is not without significant work in the academic community. Mai, et. al. used ns-3 to simulate their version of AODV, modified for a better congestion control scheme \cite{aodv_in_ns3}.
+While there is significant work being produced using MATLAB as an environment, much of the groudbreaking work is being done in other simulation tools as well. Network Simulator 3 (ns-3) a popular tool for such simulations; it provides a discrete-event network simluator/emulator and scripting language based on C++ or Python code \cite{ns3}. Ns-3 is targeted primarily for research and educational use. While popular, is has received significant criticism. Patel and Kmaboj criticized ns-3 harshly for it's lack of a GUI and noted it's complexity and lack of hosted work and support \cite{ns3_criticism}. That is not to say it is not without significant work in the academic community. Mai, et. al. used ns-3 to simulate their version of AODV, modified for a better congestion control scheme \cite{aodv_in_ns3}. While Network Simulator 2 \cite{ns2} is now deprecated, it too, was and still is the subject of a significant number of publications.
 
 Another noteworthy platform is NetSim \cite{netsim}. Netsim Academic is the tool that most closely mirrors the intentions of this project as it is targeted at teaching/learning applications and provides adundant examples and support. Unfortunately, it is neither free nor open-source and requires a large license purchase to use. It is not without usage in the academic community though; numerous papers have cited NetSim as their primary simulation environment. Saifuddin, et. al. utilized NetSim in their analysis of alternative channel allocations for wireless networks \cite{netsim_spectrum}.  Nayak and Sinha provided an analysis of various mobility models for routing protocols (including AODV) using NetSim \cite{netsim_mobility}. Figure \ref{fig:netsim_example} shows an excerpt from their paper featuring their AODV simulation. A setup similar to the is the target for this MATAB implementation.
 
-\begin{figure}[ht]
-	\centering
- 	\includegraphics[width=2.79in]{netsim_example.png}
-	\caption{Nayak and Sinha's AODV simulation window \cite{netsim_mobility}}
-	\label{fig:netsim_example}
-\end{figure}
-
 Finally, OMNeT++ is yet another discrete-event library used frequency used to build network simulators \cite{omnet}. OMNeT sees quite a bit of use in the academic comnmunity as well, Chadha, et. al. used it in their simulation of energy consumption of nodes in a 3D environment \cite{omnet_efficient}.Thomas and Irvine investigate bandwidth usage in LTE sensor networks using OMNeT as a simulation tool \cite{omnet_lte}. Unfortunately, OmNeT falls into the same category as ns-3 in that it is overly complex and features far too steep of a learning curve to serve as a useful comparison for the objectives here.
 
+In addition to the formal program mentioned here, several scholars have published works of their own centered around creating custom, special-purpose simulators. Xie, et. al. \cite{8247856} proposed a discrete-time queuing network simulator. Driven by a need to detect abnormalities in their own layered networks to prevent DDoS attacks, the simulator provided a perfect development environment without needing to stage real attacks on live networks. Additionally, Aatish, Pooja, and Singh \cite{8071602} developed a network simulation tool aimed at testing strategies unique to IPv6. Motivated by the lack of adequate existing IPv6 infrastructure, they created their own simulator to present their future-forward research into the emerging protocol.
+
 \section{Methodology}
+
+\subsection{Overview}
 
 All of these simulation tools fall short in that they require a large learning curve; an engineering student or learner wishing to construct a prototype in any of these environments must first spend significant time learning the intricacies and methods of each. Furthermore, none are realtime and most provide little or no real support for visualization. MATLAB as an environment provides these features out of the box. Uluisik and Sevgi summarize this sentiment quite appropriately in their paper developing a MATLAB GUI for mapping complex functions\cite{matlab_gui}; after summarizing the existing body of work, they determined that an inherently simple and easy-to-operate MATLAB package was the best means to demonstrate the concepts they wished to teach. 
 
@@ -68,11 +75,34 @@ MATLAB provides a single high fidelity environment that facilitates both easy pl
 
 The AODV simulation will start by allowing a layout scheme to be chosen and a set number of nodes to be plotted on a position grid (this project will focus on only 2-dimensional positional layouts). The user can add, remove, and manipulate nodes as desired and to create unique contrived network scenarios to test edge cases Each node will then be able to "flood" its nearest neighbors and build a local routing table. The user can then request packets be sent between two nodes and observe the path in real time.
 
-As the intent of the project is to provide a basic level teaching and learning tool; the simulation in its current state will skip some aspect of wireless network simulation. Notably, this simulation does not implement queuing. Interference, sources of time delay, and power utilization are all removed so that the learner can focus more on the basic principles at play.
+As the intent of the project is to provide a basic level teaching and learning tool; the simulation in its current state will skip some aspects of wireless network simulation. Notably, this simulation does not implement queuing. Interference, sources of time delay, and power utilization are all removed so that the learner can focus more on the basic principles at play.
 
-\section{Results}
+\subsection{Process Flow}
 
-\subsection{Example 1}
+Due to the lack a a sufficient pointer structure in MATLAB, the decision was made to process the path propagation hierarchically, rather than individually. This has the added benefit of providing simulations that are repeatable as variations in clock speed, processing time, etc. do not delay transmissions and possibly cause them to be received in different orders across different experimental runs. Therefore, no race conditions or deadlocks are possible scenario. This also reduces individual processing slightly by removing much of the burden of repeated calculations at the node level.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=3in]{sendPacket.png}
+	\caption{Process flow for sendPacket()}
+	\label{fig:sendPacket}
+\end{figure}
+
+The algorithm flow upon request a packet be sent is as follows:
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=3in]{send.png}
+	\caption{Process flow for send()}
+	\label{fig:send}
+\end{figure}
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=3in]{flood.png}
+	\caption{Process flow for flood()}
+	\label{fig:flood}
+\end{figure}
 
 \begin{figure*}[ht]
 	\centering
@@ -84,12 +114,16 @@ As the intent of the project is to provide a basic level teaching and learning t
 	\label{fig:ex_1}
 \end{figure*}
 
-\begin{figure*}[ht]
+\begin{figure*}
 	\centering
 	\includegraphics[width=6.8in]{Ex_1_table.png}
 	\caption{Simple route request and reply, node route tables}
 	\label{fig:ex_1_table}
 \end{figure*}
+
+\section{Results}
+
+\subsection{Example 1}
 
 The simplest scenario involves a node sending a transmission across the network with no prior knowledge whatsoever. Take the node layout in in figure \ref{fig:ex_1}. Lines show the available links to each node's nearest neighbors. A packet will be sent from node D to node G. D has no route to G so it emits a route request (RREQ), which is forwarded by each node that receives it and thus propagates throughout the network via "flooding" (notated by the cyan links). Along the way, each node sets up reverse route entries detailing the next node, hop count, and sequence number in order to send to the source of the route request. Upon receiving the request, node G replies with a route reply (RREPL)(notated by the blue links), which the intermediate nodes know how to direct thanks to the reverse routes that were just set up. Finally, now that D has a valid route to G, data is sent (notated by the green links). Subsequent transmissions to G from D will continue to use this route and require no new overhead.
 
@@ -116,12 +150,6 @@ Upon completion, each node's route table can be ovserved in the figure \ref{fig:
 	\label{fig:ex_2_table}
 \end{figure*}
 
-Example 2 involves utilized the previously stored route tables (figure \ref{fig:ex_2}. In this case, node C will try sending to node G. Since C contains no entry for G in its route table, it must flood; however, the intermediate nodes A, D, and E all do have entries for G. Instead of propagating the RREQ message onward, they respond with a RREPL. C updates its route table upon receipt of each RREPL, choosing the route with the lowest hop count to G each time. Eventually, C is able to send out to E, who the continues to send to G via its route entry established in Example 1.
-
-Again, the route table is shown in figure \ref{fig:ex_2_table}. Note the additional entries in A, B, D, E, and F.
-
-\subsection{Example 3}
-
 \begin{figure*}[ht]
 	\centering
 	\includegraphics[width=2.1in]{Ex_3_data_1.png}
@@ -141,6 +169,12 @@ Again, the route table is shown in figure \ref{fig:ex_2_table}. Note the additio
 	\label{fig:ex_3_table}
 \end{figure*}
 
+Example 2 involves utilized the previously stored route tables (figure \ref{fig:ex_2}. In this case, node C will try sending to node G. Since C contains no entry for G in its route table, it must flood; however, the intermediate nodes A, D, and E all do have entries for G. Instead of propagating the RREQ message onward, they respond with a RREPL. C updates its route table upon receipt of each RREPL, choosing the route with the lowest hop count to G each time. Eventually, C is able to send out to E, who the continues to send to G via its route entry established in Example 1.
+
+Again, the route table is shown in figure \ref{fig:ex_2_table}. Note the additional entries in A, B, D, E, and F.
+
+\subsection{Example 3}
+
 One of the most beneficial features of AODV is its elegant handling of link failures. A link failure occurs when a pre-established route is no longer possible due to node movement or interference. AODV handles this by sending route error (RERR) messages, as shown in figure \ref{fig:ex_3}. In this example, node D once again tries to send to node G, but intermediate node E has moved, breaking the route. D starts off by trying to send normally, but A must reply with a RERR when it realizes it can't reach E. This message propagates back up to D and both nodes cancel out their routes to G. D must once again flood by sending out RREQ packets. C replies that it knows a route (the one established in example 2) and D then proceeds to send to G via C.
 
 The subsequent routing table is shown in figure \ref{fig:ex_3_table}. The sequence number have increased several times. Each time the nodes notice a change in their local network topology the increase their sequence numbers. All nodes connected or disconnected from E have been incremented to 2.
@@ -148,6 +182,7 @@ The subsequent routing table is shown in figure \ref{fig:ex_3_table}. The sequen
 While this is an exceptional method of handling single link failure or small changes in topology, it starts to become rather burdensome when multiple route failures occur. One can imagine a contrived highly mobile scenario where the topology changes in such a way as to allow every intermediate node to obtain a false route entry for the desired destination. In such a case, the source node must attempt to send and receive a reply. It then floods but receives multiple replies. Because AODV provides no method of maintaining a node's past activity, it must attempt sending again, receive an error, flood again, attempt to send again, etc. It can only cancel out one intermediate node's route destination entry at a time, potentially causing enormous overhead.
 
 \section{Analysis}
+\label{sect:analysis}
 
 To investigate the problem of quantifying exactly how much overhead various network topologies generate, statistics from several repeated transmissions were aggregated. In each simulation, the network had it's nodes reset to an established starting position and the route tables for all nodes were cleared. Nodes were set in motion and updated their position regularly. Each node had a pre-established step size and direction. Nodes reflected off the boundaries of the simulation area in order to ensure that they stayed relatively close to each other and did not go out of bounds. Random traffic was generated and sent through the network. The random number generator used a static seed to ensure that all variables were consistent from experiment to experiment. 
 
@@ -190,14 +225,11 @@ Figure \ref{fig:hops} shows the number of hops required for each transmission. A
 
 Although this simulation provides an excellent base-level teaching tool, it falls short of accurate analysis in several areas. The foremost improvement that could be made would be to implement node queuing. While this would require a large burden of additional work, it would garner some interesting insights into node mechanics and provide a more realistic reflection of how ad-hoc networks truly perform. 
 
-Additionally, to enhance the usefulness of this tool, it would be beneficial to be able to compare AODV to another routing protocol like destination-sequenced distance-vector (DSDV)  or dynamic source routing (DSR). Being able to compare and contrast the differences and weight the benefits of AODV would be a valuable opportunity.
+Additionally, to enhance the usefulness of this tool, it would be beneficial to be able to compare AODV to another routing protocol like destination-sequenced distance-vector (DSDV)  \cite{perkins1994highly} or dynamic source routing (DSR) \cite{rfc4728}. Being able to compare and contrast the differences and weight the benefits of AODV would be a valuable opportunity.
 
 \section{Conclusions}
 
 The MATLAB-based ad-hoc on-demand distance vector (AODV) simulation presented above provides a meaningful method of demonstrating basic routing concepts quickly and easily, circumventing the learning curve of more specialized network simulation tools and facilitation visual learning. The MATLAB environment provides for easy inspection and expansion into additional analysis function. The examples and analysis presented serve as sufficient proof-of-concept of this endeavor to emulate AODV.
-
-\section{lorem}
-\lipsum
 
 \bibliographystyle{IEEEtran}
 \bibliography{sources}
