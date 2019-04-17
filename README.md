@@ -46,11 +46,4 @@ plotHops(stats);
 
 ## Author
 
-Stuart Miller - [sm67c@mst.edu](mailto:sm67c@mst.edu) - [Github](https://github.com/stewythe1st)
-
-
-<style>
-	img {
-		width: 260px;
-	}
-</style>
+Stuart Miller
