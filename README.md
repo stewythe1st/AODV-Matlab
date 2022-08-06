@@ -1,13 +1,15 @@
 # AODV in MATLAB
 
+*Note: I do not maintain this repository any more. I'm intrigued that there has been even a modest amount of interest in it. But let's be honest here; I made this for a class project in university. It was just to get a grade. I work in a different field of programming now that does not involve routing algorithms, and I'm not even sure I remember how this code worked. If you find this project interesting, feel free to fork it and fix/modify/improve it. I will not be accepting issues, pull requests, or inquiries of any kind. Sincerest apologies, but I hope you understand.*
+
 ## Overview
 
-A simulation of the ad-hoc on-demand distance vector (AODV) routing protocal for wireless networks in MATLAB.
+A simulation of the ad-hoc on-demand distance vector (AODV) routing protocol for wireless networks in MATLAB.
 
 
 ## Prerequisites
 
-* MATLAB r2017b or newer
+* MATLAB r2017b *(may or may not work in newer versions; has only been tested in 2017b)*
 
 ## Usage
 
